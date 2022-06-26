@@ -1,9 +1,7 @@
-import math
 import socket
 import json
 import multiprocessing
 from multiprocessing import Manager
-import numpy
 import matplotlib.pyplot as plt
 
 def CSI_figure_proc(rec_list, subcarrier, time_scope):
@@ -18,7 +16,7 @@ def CSI_figure_proc(rec_list, subcarrier, time_scope):
                 try:
                     if (rec_list[i]["recieved_time"]-ctime<time_scope):
                         time_axis.append(rec_list[i]["recieved_time"])
-                        amp_axis.append(rec_list[i]["CSI_info"][subcarrier][0])
+                        amp_axis.append(rec_list[i]["CSI_info"][subcarrier-1][0])
                     else:
                         break
                 except:
@@ -38,32 +36,71 @@ def CSI_figure_proc(rec_list, subcarrier, time_scope):
             continue
 
 if (__name__=="__main__"):
-    send_mode = True
+    #determine whether to plot waveform & record CSI
+    while True:
+        fig = input("Observe CSI waveform?(yes/no): ")
+        if (fig=="yes"):
+            while True:
+                subcarrier = int(input("subcarrier(1~64): "))
+                if (subcarrier>=1 and subcarrier<=64):
+                    time_scope = 3
+                    rec_list = Manager().list()
+                    break
+                else:
+                    print("wrong input")
+                    continue
+            break
+        elif (fig=="no"):
+            break
+        else:
+            print("wrong input")
+            continue
+    
+    while True:
+        rec = input("record CSI ?(yes/no): ")
+        if (rec=="yes"):
+            while True:
+                rec_video = input("record with video?(yes/no): ")
+                if (rec_video=="yes" or rec_video=="no"):
+                    break
+                else:
+                    print("wrong input")
+                    continue
+            rec_proc = None
+        elif (rec=="no"):
+            break
+        else:
+            print("wrong input")
+            continue
 
-    time_scope = 3
-    subcarrier = int(input("subcarrier: "))
-    rec_list = Manager().list()
-    plot_proc = None
+    #load settings
+    with open("settings.json", "r") as fin:
+        settings = json.load(fin)
+    print("loaded settings.")
 
+    #create UDP socket
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.bind(("", 3333))
-    while (True):
-        if (send_mode==True):
-            s.sendto("rx".encode(), ("192.168.4.1", 3333))
-            send_mode = False
-        else:
-            (indata, addr) = s.recvfrom(4096)
-            try:
-                rx_data = json.loads(indata.decode())
-                print(rx_data)
-                if (rx_data["client_MAC"]=="8C:CE:4E:9A:04:5C"):
-                    rec_list.append(rx_data)
-                while (len(rec_list)>time_scope/0.01):
-                    rec_list.pop(0)
-                #figure proc
-                if (plot_proc==None):
-                    plot_proc = multiprocessing.Process(target=CSI_figure_proc, args=(rec_list, subcarrier, time_scope))
-                    plot_proc.start()
+    print("started UDP server.")
 
-            except:
-                pass
+    #send "rx" to AP first
+    for i in range(10):
+        s.sendto("rx".encode(), (settings["AP_IP_ADDR"], 3333))
+
+    #recieve packet from AP
+    #with ploting
+    if (fig=="yes"):
+        plot_proc = multiprocessing.Process(target=CSI_figure_proc, args=(rec_list, subcarrier, time_scope))
+        plot_proc.start()
+
+    while (True):
+        (indata, addr) = s.recvfrom(4096)
+        try:
+            rx_data = json.loads(indata.decode())
+            #print(rx_data)
+            if (rx_data["client_MAC"] in settings["STA_MAC_ARRDS"]):
+                rec_list.append(rx_data)
+            while (len(rec_list)>time_scope/0.01):
+                rec_list.pop(0)
+        except:
+            pass
