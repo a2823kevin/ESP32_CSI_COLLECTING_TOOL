@@ -1,2 +1,2 @@
 # PC(UDP server)
-用於接收來自AP的封包
+Collector: 用於接收/蒐集來自AP的封包
