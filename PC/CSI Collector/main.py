@@ -2,40 +2,19 @@ import socket
 import json
 import multiprocessing
 from multiprocessing import Manager
-import matplotlib.pyplot as plt
+from pynput.keyboard import Key, Listener
+from utils import *
 
-def CSI_figure_proc(rec_list, subcarrier, time_scope):
-    plt.ion()
-    plt.figure()
-    while True:
-        try:
-            time_axis = []
-            amp_axis = []
-            ctime = rec_list[-1]["recieved_time"]
-            for i in range(len(rec_list)-1, -1, -1):
-                try:
-                    if (rec_list[i]["recieved_time"]-ctime<time_scope):
-                        time_axis.append(rec_list[i]["recieved_time"])
-                        amp_axis.append(rec_list[i]["CSI_info"][subcarrier-1][0])
-                    else:
-                        break
-                except:
-                    pass
-            time_axis.reverse()
-            amp_axis.reverse()
-
-            plt.title(f"Subcarrier {subcarrier}: CSI recieved from {rec_list[0]['client_MAC']}")
-            plt.xlabel("time")
-            plt.ylabel("amplitude")
-            plt.ylim([-127, 127])
-            plt.plot(time_axis, amp_axis, "b-")
-            plt.draw()
-            plt.pause(0.01)
-            plt.clf()
-        except:
-            continue
+#key to stop recording(with video)
+def On_press(key):
+    global rec_util
+    if (key==Key.esc):
+        rec_util["stop_signal"] = True
 
 if (__name__=="__main__"):
+    lisener = Listener(on_press=On_press)
+    lisener.start()
+
     #determine whether to plot waveform & record CSI
     while True:
         fig = input("Observe CSI waveform?(yes/no): ")
@@ -44,13 +23,15 @@ if (__name__=="__main__"):
                 subcarrier = int(input("subcarrier(1~64): "))
                 if (subcarrier>=1 and subcarrier<=64):
                     time_scope = 3
-                    rec_list = Manager().list()
+                    wave_lst = Manager().list()
                     break
                 else:
                     print("wrong input")
                     continue
+            fig = True
             break
         elif (fig=="no"):
+            fig = False
             break
         else:
             print("wrong input")
@@ -59,15 +40,28 @@ if (__name__=="__main__"):
     while True:
         rec = input("record CSI ?(yes/no): ")
         if (rec=="yes"):
+            rec_util = Manager().dict()
             while True:
-                rec_video = input("record with video?(yes/no): ")
-                if (rec_video=="yes" or rec_video=="no"):
+                rec_video = input("record with video(without specifying motion)?(yes/no): ")
+                if (rec_video=="yes"):
+                    rec_util["record_time"] = None
+                    rec_video = True
+                    motion_name = None
+                    break
+                elif (rec_video=="no"):
+                    motion_name = input("what motion you want to record?: ")
+                    rec_util["record_time"] = float(input("how long do you want to record?: "))
+                    rec_video = False
                     break
                 else:
                     print("wrong input")
                     continue
-            rec_proc = None
+            rec = True
+            rec_util["rx_data"] = None
+            rec_util["stop_signal"] = False
+            break
         elif (rec=="no"):
+            rec = False
             break
         else:
             print("wrong input")
@@ -89,18 +83,31 @@ if (__name__=="__main__"):
 
     #recieve packet from AP
     #with ploting
-    if (fig=="yes"):
-        plot_proc = multiprocessing.Process(target=CSI_figure_proc, args=(rec_list, subcarrier, time_scope))
+    if (fig==True):
+        plot_proc = multiprocessing.Process(target=CSI_figure_proc, args=(wave_lst, subcarrier, time_scope))
         plot_proc.start()
 
-    while (True):
-        (indata, addr) = s.recvfrom(4096)
+    #with CSI recording
+    if (rec==True):
+        CSI_rec_proc = multiprocessing.Process(target=CSI_record_proc, args=(motion_name, rec_util))
+        CSI_rec_proc.start()
+    #with video recording
+
+    while (rec_util["stop_signal"]==False):
+        (indata, _) = s.recvfrom(4096)
         try:
-            rx_data = json.loads(indata.decode())
-            #print(rx_data)
-            if (rx_data["client_MAC"] in settings["STA_MAC_ARRDS"]):
-                rec_list.append(rx_data)
-            while (len(rec_list)>time_scope/0.01):
-                rec_list.pop(0)
+            indata = json.loads(indata.decode())
+            #print(rec_util["rx_data"])
+            if (indata["client_MAC"] in settings["STA_MAC_ARRDS"]):
+
+                if (fig==True):
+                    wave_lst.append(rec_util["rx_data"])
+                    while (len(wave_lst)>time_scope/0.01):
+                        wave_lst.pop(0)
+
+                if (rec==True):
+                    rec_util["rx_data"] = indata
+                    if (rec_video==True):
+                        pass
         except:
             pass
