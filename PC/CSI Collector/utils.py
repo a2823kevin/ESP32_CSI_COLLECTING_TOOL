@@ -41,52 +41,77 @@ def CSI_record_proc(motion, rec_util):
     start_time = None
 
     while (rec_util["stop_signal"]==False):
-        #avoid to record duplicate data
-        if (current_data!=rec_util["rx_data"]):
-            current_data = rec_util["rx_data"]
+        try:
+            #avoid to record duplicate data
+            if (current_data!=rec_util["rx_data"]):
+                current_data = rec_util["rx_data"]
+                rec_util["current_time"] = current_data["recieved_time"]
 
-            #init start time
-            if (start_time==None):
-                start_time = rec_util["rx_data"]["recieved_time"]
+                #init start time
+                if (start_time==None):
+                    start_time = rec_util["rx_data"]["recieved_time"]
 
-            #prepare file for recording
-            if (current_data["client_MAC"] not in writting_files):
-                t = datetime.now().strftime("%Y%m%d%H%M%S")
-                maddr = current_data["client_MAC"]
-                m = ""
-                for s in maddr.split(":"):
-                    m += s
+                #prepare file for recording
+                if (current_data["client_MAC"] not in writting_files):
+                    t = datetime.now().strftime("%Y%m%d%H%M%S")
+                    maddr = current_data["client_MAC"]
+                    m = ""
+                    for s in maddr.split(":"):
+                        m += s
 
-                if (motion!=None):
-                    fname = f"./record/{t}_{m}_{motion}.csv"
-                else:
-                    fname = f"./record/{t}_{m}.csv"
-                writting_files[maddr] = open(fname, "w", encoding="utf8")
-                print(f"created file: {fname}")
+                    if (motion!=None):
+                        fname = f"./record/{t}_{m}_{motion}.csv"
+                    else:
+                        fname = f"./record/{t}_{m}.csv"
+                    writting_files[maddr] = open(fname, "w", encoding="utf8")
+                    print(f"created file: {fname}")
 
-                writting_files[maddr].write("timestamp, ")
-                for i in range(1, 64):
-                    writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_mag"+", ")
-                    writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_ang"+", ")
-                writting_files[maddr].write("subcarrier64_mag, subcarrier64_ang\n")
-            
-            #write CSI
-            writting_files[maddr].write(str(current_data["recieved_time"])+", ")
-            for i in range(len(current_data["CSI_info"])-1):
-                writting_files[maddr].write(str(current_data["CSI_info"][i][0])+", "+str(current_data["CSI_info"][i][1])+", ")
-            writting_files[maddr].write(str(current_data["CSI_info"][63][0])+", "+str(current_data["CSI_info"][63][1])+"\n")
+                    writting_files[maddr].write("timestamp, ")
+                    for i in range(1, 64):
+                        writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_mag"+", ")
+                        writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_ang"+", ")
+                    writting_files[maddr].write("subcarrier64_mag, subcarrier64_ang\n")
+                
+                #write CSI
+                writting_files[maddr].write(str(current_data["recieved_time"])+", ")
+                for i in range(len(current_data["CSI_info"])-1):
+                    writting_files[maddr].write(str(current_data["CSI_info"][i][0])+", "+str(current_data["CSI_info"][i][1])+", ")
+                writting_files[maddr].write(str(current_data["CSI_info"][63][0])+", "+str(current_data["CSI_info"][63][1])+"\n")
+        except:
+            pass
 
-            #stop by time
-            if (rec_util["record_time"]!=None):
-                if (current_data["recieved_time"]-start_time>=rec_util["record_time"]):
-                    rec_util["stop_signal"] = True
-                    break
+        #stop by time
+        if (rec_util["record_time"]!=None):
+            if (rec_util["current_time"]-start_time>=rec_util["record_time"]):
+                rec_util["stop_signal"] = True
+                break
     
     for mac in writting_files:
         writting_files[mac].close()
     print("stopped recording")
 
+def video_record_proc(rec_util):
+    ctime = None
+    fname = "./record/" + datetime.now().strftime("%Y%m%d%H%M%S")
+    fout = cv2.VideoWriter(f"{fname}.mp4", cv2.VideoWriter_fourcc(*"XVID"), 30, (640, 480))
+    video_stream = None
+
+    try:
+        while (rec_util["stop_signal"]==False):
+            if (rec_util["current_time"]!=ctime):
+                if (video_stream==None):
+                    video_stream = cv2.VideoCapture(0)
+                ctime = rec_util["current_time"]
+                (ret, frame) = video_stream.read()
+                cv2.putText(frame, str(ctime), (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
+                fout.write(frame)
+    except:
+        pass
+
+    video_stream.release()
+    fout.release()
+
 if __name__=="__main__":
-    a = None
-    b = None
-    print(a is b)
+    cap = cv2.VideoCapture(0)
+    (ret, frame) = cap.read()
+    cv2.imwrite("img.png", frame)

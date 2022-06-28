@@ -45,8 +45,10 @@ if (__name__=="__main__"):
                 rec_video = input("record with video(without specifying motion)?(yes/no): ")
                 if (rec_video=="yes"):
                     rec_util["record_time"] = None
-                    rec_video = True
+                    rec_util["rec_video"] = True
+                    rec_util["current_time"] = None
                     motion_name = None
+                    rec_video = True
                     break
                 elif (rec_video=="no"):
                     motion_name = input("what motion you want to record?: ")
@@ -91,7 +93,11 @@ if (__name__=="__main__"):
     if (rec==True):
         CSI_rec_proc = multiprocessing.Process(target=CSI_record_proc, args=(motion_name, rec_util))
         CSI_rec_proc.start()
+
     #with video recording
+    if (rec_video==True):
+        video_rec_proc = multiprocessing.Process(target=video_record_proc, args=(rec_util,))
+        video_rec_proc.start()
 
     while (rec_util["stop_signal"]==False):
         (indata, _) = s.recvfrom(4096)
