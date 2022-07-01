@@ -103,7 +103,7 @@ def video_record_proc(rec_util):
                     video_stream = cv2.VideoCapture(0)
                 ctime = rec_util["current_time"]
                 (ret, frame) = video_stream.read()
-                cv2.putText(frame, str(ctime), (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0))
+                cv2.putText(frame, str(ctime), (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))
                 fout.write(frame)
     except:
         pass
