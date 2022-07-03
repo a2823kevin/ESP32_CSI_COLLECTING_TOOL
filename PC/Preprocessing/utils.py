@@ -16,10 +16,8 @@ def eliminate_unused_subcarrier(fpath):
 
     #eliminate
     for i in range(len(unused_idxes)):
-        if (unused_idxes[i]%2==0 and unused_idxes[i]-1 not in unused_idxes):
-            unused_idxes.pop(i)
-            continue
-        elif (unused_idxes[i]%2==1 and unused_idxes[i]+1 not in unused_idxes):
+        if ((unused_idxes[i]%2==0 and unused_idxes[i]-1 not in unused_idxes) 
+        or (unused_idxes[i]%2==1 and unused_idxes[i]+1 not in unused_idxes)):
             unused_idxes.pop(i)
             continue
     tr_arr = numpy.delete(tr_arr, unused_idxes, axis=0)
@@ -31,7 +29,7 @@ def eliminate_unused_subcarrier(fpath):
         writer.writerows(arr)
     print(f"eliminated unused subcarriers: {[int(idx/2) for idx in unused_idxes if idx%2==0]} for {fpath}")
 
-def clip(fpath, start=None, end=None):
+def clip(fpath, start=None, end=None, motion=None):
     arr = []
     with open(fpath, "r", encoding="utf8") as fin:
         for row in csv.reader(fin):
@@ -58,11 +56,13 @@ def clip(fpath, start=None, end=None):
         arr.pop(clipped_idxes[i]-i)
     
     #save file
+    if (motion!=None):
+        fpath = fpath[:-4] + f"_{motion}.csv"
     with open(fpath, "w", encoding="utf8", newline="") as fout:
         writer = csv.writer(fout)
         writer.writerows(arr)
-    print(f"clipped record from {arr[1][0]} to {arr[-1][0]} for {fpath}")
+    print(f"clipped record from {arr[1][0]} to {arr[-1][0]} and saved it to {fpath}")
 
 if __name__=="__main__":
     eliminate_unused_subcarrier("./CSI Collector/record/20220703163553_8CCE4E9A045C.csv")
-    clip("./CSI Collector/record/20220703163553_8CCE4E9A045C.csv", 955, 960)
+    clip("./CSI Collector/record/20220703163553_8CCE4E9A045C.csv", 955, 960, "walk")
