@@ -15,6 +15,15 @@ if (__name__=="__main__"):
     lisener = Listener(on_press=On_press)
     lisener.start()
 
+    fig = None
+    rec = None
+    rec_video = None
+    rec_util = Manager().dict()
+    rec_util["record_time"] = None
+    rec_util["current_time"] = None
+    rec_util["rx_data"] = None
+    rec_util["stop_signal"] = False
+
     #determine whether to plot waveform & record CSI
     while True:
         fig = input("Observe CSI waveform?(yes/no): ")
@@ -40,27 +49,21 @@ if (__name__=="__main__"):
     while True:
         rec = input("record CSI ?(yes/no): ")
         if (rec=="yes"):
-            rec_util = Manager().dict()
             while True:
                 rec_video = input("record with video(without specifying motion)?(yes/no): ")
                 if (rec_video=="yes"):
-                    rec_util["record_time"] = None
-                    rec_util["rec_video"] = True
-                    rec_util["current_time"] = None
                     motion_name = None
                     rec_video = True
                     break
                 elif (rec_video=="no"):
                     motion_name = input("what motion you want to record?: ")
-                    rec_util["record_time"] = float(input("how long do you want to record?: "))
+                    rec_util["record_time"] = float(input("how long do you want to record(sec)?: "))
                     rec_video = False
                     break
                 else:
                     print("wrong input")
                     continue
             rec = True
-            rec_util["rx_data"] = None
-            rec_util["stop_signal"] = False
             break
         elif (rec=="no"):
             rec = False
@@ -103,17 +106,12 @@ if (__name__=="__main__"):
         (indata, _) = s.recvfrom(4096)
         try:
             indata = json.loads(indata.decode())
-            #print(rec_util["rx_data"])
+            #print(indata)
             if (indata["client_MAC"] in settings["STA_MAC_ARRDS"]):
-
+                rec_util["rx_data"] = indata
                 if (fig==True):
-                    wave_lst.append(rec_util["rx_data"])
+                    wave_lst.append(indata)
                     while (len(wave_lst)>time_scope/0.01):
                         wave_lst.pop(0)
-
-                if (rec==True):
-                    rec_util["rx_data"] = indata
-                    if (rec_video==True):
-                        pass
         except:
             pass
