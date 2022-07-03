@@ -45,8 +45,9 @@ def CSI_record_proc(motion, rec_util):
             #avoid to record duplicate data
             if (current_data!=rec_util["rx_data"]):
                 current_data = rec_util["rx_data"]
+                if (len(current_data["CSI_info"])!=64):
+                    continue
                 rec_util["current_time"] = current_data["recieved_time"]
-
                 #init start time
                 if (start_time==None):
                     start_time = rec_util["rx_data"]["recieved_time"]
