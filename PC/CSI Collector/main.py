@@ -3,7 +3,8 @@ import json
 import multiprocessing
 from multiprocessing import Manager
 from pynput.keyboard import Key, Listener
-from utils import *
+from mp_utils import *
+from proc_utils import *
 
 #key to stop recording(with video)
 def On_press(key):
@@ -17,9 +18,10 @@ if (__name__=="__main__"):
 
     fig = None
     rec = None
-    rec_video = None
+
     rec_util = Manager().dict()
     rec_util["record_time"] = None
+    rec_util["motion_name"] = None
     rec_util["current_time"] = None
     rec_util["rx_data"] = None
     rec_util["stop_signal"] = False
@@ -50,21 +52,16 @@ if (__name__=="__main__"):
         rec = input("record CSI ?(yes/no): ")
         if (rec=="yes"):
             while True:
-                rec_video = input("record with video(without specifying motion)?(yes/no): ")
-                if (rec_video=="yes"):
-                    motion_name = None
-                    rec_video = True
-                    break
-                elif (rec_video=="no"):
-                    motion_name = input("what motion you want to record?: ")
-                    rec_util["record_time"] = float(input("how long do you want to record(sec)?: "))
-                    rec_video = False
-                    break
-                else:
+                rec_util["rec_method"] = int(input("recording method\n1.single motion with fixed recoring time\n2.with video recoring(without MediaPipe model)\n3.without video recoring(with MediaPipe model)\n4.with video recoring(with MediaPipe model): "))
+                if (rec_util["rec_method"] not in range(1, 5)):
                     print("wrong input")
                     continue
-            rec = True
-            break
+                else:
+                    if (rec_util["rec_method"]==1):
+                        rec_util["motion_name"] = input("what motion you want to record?: ")
+                        rec_util["record_time"] = float(input("how long do you want to record(sec)?: "))
+                    rec = True
+                    break
         elif (rec=="no"):
             rec = False
             break
@@ -94,11 +91,11 @@ if (__name__=="__main__"):
 
     #with CSI recording
     if (rec==True):
-        CSI_rec_proc = multiprocessing.Process(target=CSI_record_proc, args=(motion_name, rec_util))
+        CSI_rec_proc = multiprocessing.Process(target=CSI_record_proc, args=(rec_util,))
         CSI_rec_proc.start()
 
     #with video recording
-    if (rec_video==True):
+    if (rec_util["rec_method"]>1):
         video_rec_proc = multiprocessing.Process(target=video_record_proc, args=(rec_util,))
         video_rec_proc.start()
 

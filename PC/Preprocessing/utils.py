@@ -64,5 +64,5 @@ def clip(fpath, start=None, end=None, motion=None):
     print(f"clipped record from {arr[1][0]} to {arr[-1][0]} and saved it to {fpath}")
 
 if __name__=="__main__":
-    eliminate_unused_subcarrier("./CSI Collector/record/20220703163553_8CCE4E9A045C.csv")
-    clip("./CSI Collector/record/20220703163553_8CCE4E9A045C.csv", 955, 960, "walk")
+    #eliminate_unused_subcarrier("./CSI Collector/record/20220703193923_8CCE4E9A045C.csv")
+    clip("./CSI Collector/record/20220703193923_8CCE4E9A045C.csv", 230, 260, "walk_aside")
