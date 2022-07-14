@@ -128,6 +128,7 @@ def video_record_proc(rec_util):
                 ctime = rec_util["current_time"]
                 (ret, frame) = video_stream.read()
 
+                #MP method
                 if (["rec_method"]>2):
                     frame.flags.writeable = False
                     rec_util["current_MP_pose"] = get_simplified_pose(frame, rec_util["mp_pose_proccessor"], skip_incomplete=False)

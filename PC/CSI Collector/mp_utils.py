@@ -1,3 +1,4 @@
+import cv2
 from mediapipe import solutions
 
 def get_mp_pose_proccessor():
@@ -40,3 +41,20 @@ def get_simplified_pose(img, mp_pose_proccessor, target="recording", skip_incomp
 
 def get_simplified_pose_connections():
     return ((0, 1), (1, 2), (1, 4), (1, 6), (2, 3), (4, 5), (6, 7), (6, 9), (7, 8), (9, 10))
+
+if __name__=="__main__":
+    video_stream = cv2.VideoCapture(0)
+    proccessor = get_mp_pose_proccessor()
+    connection = get_simplified_pose_connections()
+
+    while True:
+        (ret, frame) = video_stream.read()
+        frame.flags.writeable = False
+        lm = get_simplified_pose(frame, proccessor, target="ploting", skip_incomplete=False)
+        frame.flags.writeable = True
+        solutions.drawing_utils.draw_landmarks(frame, lm, connection, solutions.drawing_styles.get_default_pose_landmarks_style())
+        cv2.imshow("img", cv2.flip(frame, 1))
+        if (cv2.waitKey(1)&0xFF==27):
+            break
+    
+    video_stream.release()
