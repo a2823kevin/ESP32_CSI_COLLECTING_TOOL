@@ -6,7 +6,7 @@ def get_mp_pose_proccessor():
 
 def get_simplified_pose(img, mp_pose_proccessor, target="recording", skip_incomplete=False):
     lm = (mp_pose_proccessor.process(img)).pose_landmarks
-    if (len(lm.landmark)==0):
+    if (lm==None):
         return None
 
     if (skip_incomplete==True):

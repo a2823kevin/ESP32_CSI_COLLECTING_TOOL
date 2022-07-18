@@ -80,7 +80,11 @@ def CSI_record_proc(rec_util):
                         for i in range(1, 65):
                             writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_mag"+", ")
                             writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_ang"+", ")
-                        writting_files[maddr].write("head, chest, left_elbow, left_hand, right_elbow, right_hand, hip, left_knee, left_foot, right_knee, right_foot")
+                        for n in ["head", "chest", "left_elbow", "left_hand", "right_elbow", "right_hand", "hip", "left_knee", "left_foot", "right_knee"]:
+                            writting_files[maddr].write(n+"_x, ")
+                            writting_files[maddr].write(n+"_y, ")
+                            writting_files[maddr].write(n+"_z, ")
+                        writting_files[maddr].write("right_foot_x, right_foot_y, right_foot_z\n")
                 
                 #write CSI
                 if (rec_util["rec_method"]<3):
@@ -91,14 +95,20 @@ def CSI_record_proc(rec_util):
 
                 #MediaPipe method
                 else:
-                    writting_files[maddr].write(str(current_data["recieved_time"])+", ")
-                    for i in range(len(current_data["CSI_info"])):
-                        writting_files[maddr].write(str(current_data["CSI_info"][i][0])+", "+str(current_data["CSI_info"][i][1])+", ")
-                    #MP pose
-                    if (rec_util["current_MP_pose"]!=None):
-                        current_pose = rec_util["current_MP_pose"]
-                        for i in range(len(current_pose)-1):
+                    current_pose = rec_util["current_MP_pose"]
+                    if (current_pose!=None):
+                        writting_files[maddr].write(str(current_data["recieved_time"])+", ")
+                        for i in range(len(current_data["CSI_info"])):
                             writting_files[maddr].write(str(current_data["CSI_info"][i][0])+", "+str(current_data["CSI_info"][i][1])+", ")
+                        #MP pose
+                        for i in range(len(current_pose)-1):
+                            writting_files[maddr].write(str(current_pose[i][0])+", ")
+                            writting_files[maddr].write(str(current_pose[i][1])+", ")
+                            writting_files[maddr].write(str(current_pose[i][2])+", ")
+                        writting_files[maddr].write(str(current_pose[-1][0])+", ")
+                        writting_files[maddr].write(str(current_pose[-1][1])+", ")
+                        writting_files[maddr].write(str(current_pose[-1][2])+"\n")
+                        
         except:
             pass
 
@@ -115,6 +125,7 @@ def CSI_record_proc(rec_util):
 def video_record_proc(rec_util):
     ctime = None
     video_stream = None
+    mppp = get_mp_pose_proccessor()
 
     if (rec_util["rec_method"]==2 or rec_util["rec_method"]==4):
         fname = "./record/" + datetime.now().strftime("%Y%m%d%H%M%S")
@@ -129,20 +140,20 @@ def video_record_proc(rec_util):
                 (ret, frame) = video_stream.read()
 
                 #MP method
-                if (["rec_method"]>2):
+                if (rec_util["rec_method"]>2):
                     frame.flags.writeable = False
-                    rec_util["current_MP_pose"] = get_simplified_pose(frame, rec_util["mp_pose_proccessor"], skip_incomplete=False)
+                    rec_util["current_MP_pose"] = get_simplified_pose(frame, mppp, skip_incomplete=False)
                     frame.flags.writeable = True
 
                 if (rec_util["rec_method"]==2 or rec_util["rec_method"]==4):
                     cv2.putText(frame, str(ctime), (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))
                     fout.write(frame)
+
+        video_stream.release()
+        if (rec_util["rec_method"]==2 or rec_util["rec_method"]==4):
+            fout.release()
     except:
         pass
-
-    video_stream.release()
-    if (rec_util["rec_method"]==2 or rec_util["rec_method"]==4):
-        fout.release()
 
 if __name__=="__main__":
     cap = cv2.VideoCapture(0)

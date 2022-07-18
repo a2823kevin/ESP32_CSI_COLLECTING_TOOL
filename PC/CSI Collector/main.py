@@ -20,6 +20,7 @@ if (__name__=="__main__"):
     rec = None
 
     rec_util = Manager().dict()
+    rec_util["rec_method"] = 0
     rec_util["record_time"] = None
     rec_util["motion_name"] = None
     rec_util["current_time"] = None
@@ -68,6 +69,7 @@ if (__name__=="__main__"):
         else:
             print("wrong input")
             continue
+        break
 
     #load settings
     with open("settings.json", "r") as fin:
