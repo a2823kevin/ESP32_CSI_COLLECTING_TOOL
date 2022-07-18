@@ -15,11 +15,16 @@ def eliminate_unused_subcarrier(fpath):
             unused_idxes.append(i)
 
     #eliminate
+    l = []
+    print(unused_idxes)
     for i in range(len(unused_idxes)):
         if ((unused_idxes[i]%2==0 and unused_idxes[i]-1 not in unused_idxes) 
         or (unused_idxes[i]%2==1 and unused_idxes[i]+1 not in unused_idxes)):
-            unused_idxes.pop(i)
+            l.append(i)
             continue
+    for i in range(len(l)):
+        unused_idxes.pop(l[i]-i)
+
     tr_arr = numpy.delete(tr_arr, unused_idxes, axis=0)
 
     #save file

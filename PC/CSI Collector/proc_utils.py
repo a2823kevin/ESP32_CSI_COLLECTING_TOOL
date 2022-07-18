@@ -15,7 +15,7 @@ def CSI_figure_proc(wave_lst, subcarrier, time_scope):
                 try:
                     if (wave_lst[i]["recieved_time"]-ctime<time_scope):
                         time_axis.append(wave_lst[i]["recieved_time"])
-                        amp_axis.append(wave_lst[i]["CSI_info"][subcarrier-1][0])
+                        amp_axis.append(wave_lst[i]["CSI_info"][(subcarrier-1)*2][0])
                     else:
                         break
                 except:
@@ -61,10 +61,12 @@ def CSI_record_proc(rec_util):
                     for s in maddr.split(":"):
                         m += s
 
-                    if (rec_util["motion_name"]!=None):
+                    if (rec_util["rec_method"]==1):
                         fname = f"./record/{t}_{m}_" + rec_util["motion_name"] + ".csv"
-                    else:
+                    elif (rec_util["rec_method"]==2):
                         fname = f"./record/{t}_{m}.csv"
+                    else:
+                        fname = f"./record/{t}_{m}_mp.csv"
                     writting_files[maddr] = open(fname, "w", encoding="utf8")
                     print(f"created file: {fname}")
 
