@@ -16,7 +16,6 @@ def eliminate_unused_subcarrier(fpath):
 
     #eliminate
     l = []
-    print(unused_idxes)
     for i in range(len(unused_idxes)):
         if ((unused_idxes[i]%2==0 and unused_idxes[i]-1 not in unused_idxes) 
         or (unused_idxes[i]%2==1 and unused_idxes[i]+1 not in unused_idxes)):
@@ -33,6 +32,52 @@ def eliminate_unused_subcarrier(fpath):
         writer = csv.writer(fout)
         writer.writerows(arr)
     print(f"eliminated unused subcarriers: {[int(idx/2) for idx in unused_idxes if idx%2==0]} for {fpath}")
+
+def get_sampling_period(fpath):
+    arr = []
+    with open(fpath, "r", encoding="utf8") as fin:
+        for row in csv.reader(fin):
+            try:
+                arr.append(float(row[0]))
+            except:
+                continue
+    diff = []
+    for i in range(2, len(arr)):
+        d = arr[i]-arr[i-1]
+        if (d>0 and d<1):
+            diff.append(d)
+
+    #return min & avg
+    return (min(diff), sum(diff)/len(diff))
+    
+
+def interpolate(fpath, sampling_period):
+    arr = []
+    with open(fpath, "r", encoding="utf8") as fin:
+        for row in csv.reader(fin):
+            arr.append(row)
+
+    #determine which row needs interpolation
+    interp_idx = []
+    for i in range(2, len(arr)):
+        interval = float(arr[i][0]) - float(arr[i-1][0])
+        if (interval==0):
+            continue
+        if (sampling_period/interval>=0.4 and sampling_period/interval<=0.6):
+            interp_idx.append(i)
+
+    #interpolate
+    for i in range(len(interp_idx)):
+        row = []
+        for j in range(len(arr[0])):
+            row.append((float(arr[interp_idx[i]+i][j])+float(arr[interp_idx[i]+i-1][j]))/2)
+        arr.insert(interp_idx[i]+i, row)
+    
+    #save file
+    with open(fpath, "w", encoding="utf8", newline="") as fout:
+        writer = csv.writer(fout)
+        writer.writerows(arr)
+    print(f"interpolated {fpath} with sampling period: {sampling_period}(sec)")
 
 def clip(fpath, start=None, end=None, motion=None):
     arr = []
@@ -69,5 +114,6 @@ def clip(fpath, start=None, end=None, motion=None):
     print(f"clipped record from {arr[1][0]} to {arr[-1][0]} and saved it to {fpath}")
 
 if __name__=="__main__":
-    #eliminate_unused_subcarrier("./CSI Collector/record/20220703193923_8CCE4E9A045C.csv")
-    clip("./CSI Collector/record/20220703193923_8CCE4E9A045C.csv", 230, 260, "walk_aside")
+    fpath = "./CSI Collector/record/20220718171953_8CCE4E9A045C_mp.csv"
+    #eliminate_unused_subcarrier("./CSI Collector/record/20220718171953_8CCE4E9A045C_mp.csv")
+    #clip("./CSI Collector/record/20220718171953_8CCE4E9A045C_mp.csv", 230, 260, "walk_aside")
