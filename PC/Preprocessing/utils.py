@@ -1,9 +1,12 @@
 import json
-import csv
+import warnings
 import numpy
 import matplotlib.pyplot as plt
 import pandas
-from scipy.signal import butter, lfilter, freqz
+from pandas.errors import PerformanceWarning
+from scipy.signal import butter, lfilter
+
+warnings.simplefilter(action="ignore", category=PerformanceWarning)
 
 def eliminate_unused_subcarrier(fpath):
     fin = pandas.read_csv(fpath)
@@ -117,18 +120,27 @@ def get_butterworth_LPF(cutoff, fs, order=5):
     return b, a
 
 def filtering(fpath, b, a):
-    arr = []
-    with open(fpath, "r", encoding="utf8") as fin:
-        for row in csv.reader(fin):
-            arr.append(row)
+    fin = pandas.read_csv(fpath)
+    result = pandas.DataFrame()
+
+    #filtering
+    for key in fin.keys():
+        if (key[0:10]=="subcarrier"):
+            result[key] = lfilter(b, a, fin[key])
+        else:
+            result[key] = fin[key]
+    
+    #save file
+    result.to_csv(fpath, index=False)
 
 if __name__=="__main__":
     fpath = "./CSI Collector/record/20220718171953_8CCE4E9A045C_mp.csv"
     with open("./Preprocessing/settings.json", "r") as fin:
         settings = json.load(fin)
 
-    #eliminate_unused_subcarrier("./CSI Collector/record/20220718171953_8CCE4E9A045C_mp.csv")
-    #clip("./CSI Collector/record/20220718171953_8CCE4E9A045C_mp.csv", 230, 260, "walk_aside")
     fs = 1 / settings["CSI_sampling_period"]
-    b, a = get_butterworth_LPF(fs*0.3, fs)
-    plot_CSI_signal(fpath, batch_num=4)
+    b, a = get_butterworth_LPF(fs*0.3, fs, order=20)
+    
+    plot_CSI_signal(fpath)
+    filtering(fpath, b, a)
+    plot_CSI_signal(fpath)
