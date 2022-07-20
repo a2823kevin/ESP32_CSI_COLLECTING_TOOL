@@ -70,45 +70,45 @@ def CSI_record_proc(rec_util):
                     writting_files[maddr] = open(fname, "w", encoding="utf8")
                     print(f"created file: {fname}")
 
-                    writting_files[maddr].write("timestamp, ")
+                    writting_files[maddr].write("timestamp,")
                     #write first row
                     if (rec_util["rec_method"]<3):
                         for i in range(1, 64):
-                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_mag"+", ")
-                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_ang"+", ")
-                        writting_files[maddr].write("subcarrier64_mag, subcarrier64_ang\n")
+                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_mag"+",")
+                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_ang"+",")
+                        writting_files[maddr].write("subcarrier64_mag,subcarrier64_ang\n")
                     #with video (MediaPipe method)
                     else:
                         for i in range(1, 65):
-                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_mag"+", ")
-                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_ang"+", ")
+                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_mag"+",")
+                            writting_files[maddr].write("subcarrier"+str(i).rjust(2, "0")+"_ang"+",")
                         for n in ["head", "chest", "left_elbow", "left_hand", "right_elbow", "right_hand", "hip", "left_knee", "left_foot", "right_knee"]:
-                            writting_files[maddr].write(n+"_x, ")
-                            writting_files[maddr].write(n+"_y, ")
-                            writting_files[maddr].write(n+"_z, ")
-                        writting_files[maddr].write("right_foot_x, right_foot_y, right_foot_z\n")
+                            writting_files[maddr].write(n+"_x,")
+                            writting_files[maddr].write(n+"_y,")
+                            writting_files[maddr].write(n+"_z,")
+                        writting_files[maddr].write("right_foot_x,right_foot_y,right_foot_z\n")
                 
                 #write CSI
                 if (rec_util["rec_method"]<3):
-                    writting_files[maddr].write(str(current_data["recieved_time"])+", ")
+                    writting_files[maddr].write(str(current_data["recieved_time"])+",")
                     for i in range(len(current_data["CSI_info"])-1):
-                        writting_files[maddr].write(str(current_data["CSI_info"][i][0])+", "+str(current_data["CSI_info"][i][1])+", ")
-                    writting_files[maddr].write(str(current_data["CSI_info"][63][0])+", "+str(current_data["CSI_info"][63][1])+"\n")
+                        writting_files[maddr].write(str(current_data["CSI_info"][i][0])+","+str(current_data["CSI_info"][i][1])+",")
+                    writting_files[maddr].write(str(current_data["CSI_info"][63][0])+","+str(current_data["CSI_info"][63][1])+"\n")
 
                 #MediaPipe method
                 else:
                     current_pose = rec_util["current_MP_pose"]
                     if (current_pose!=None):
-                        writting_files[maddr].write(str(current_data["recieved_time"])+", ")
+                        writting_files[maddr].write(str(current_data["recieved_time"])+",")
                         for i in range(len(current_data["CSI_info"])):
-                            writting_files[maddr].write(str(current_data["CSI_info"][i][0])+", "+str(current_data["CSI_info"][i][1])+", ")
+                            writting_files[maddr].write(str(current_data["CSI_info"][i][0])+","+str(current_data["CSI_info"][i][1])+",")
                         #MP pose
                         for i in range(len(current_pose)-1):
-                            writting_files[maddr].write(str(current_pose[i][0])+", ")
-                            writting_files[maddr].write(str(current_pose[i][1])+", ")
-                            writting_files[maddr].write(str(current_pose[i][2])+", ")
-                        writting_files[maddr].write(str(current_pose[-1][0])+", ")
-                        writting_files[maddr].write(str(current_pose[-1][1])+", ")
+                            writting_files[maddr].write(str(current_pose[i][0])+",")
+                            writting_files[maddr].write(str(current_pose[i][1])+",")
+                            writting_files[maddr].write(str(current_pose[i][2])+",")
+                        writting_files[maddr].write(str(current_pose[-1][0])+",")
+                        writting_files[maddr].write(str(current_pose[-1][1])+",")
                         writting_files[maddr].write(str(current_pose[-1][2])+"\n")
                         
         except:
