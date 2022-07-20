@@ -91,47 +91,25 @@ def clip(fpath, start=None, end=None, motion=None):
     print("clipped record from "+str(fin["timestamp"][start_idx])+" to "+str(fin["timestamp"][end_idx])+f" and saved it to {fpath}")
 
 def plot_CSI_signal(fpath, batch_size=15000, batch_num=1, part="mag", subcarriers=[4, 8, 16, 32, 64]):
-    sc_map = {}
-    sc_idx_map = {}
-    start = (batch_num-1) * batch_size
-    end = batch_num * batch_size
-    counter = 0
+    fin = pandas.read_csv(fpath)
+    start_idx = (batch_num-1) * batch_size
+    end_idx = batch_num * batch_size
+    signals = pandas.DataFrame()
 
-    with open(fpath, "r", encoding="utf8") as fin:
-        for row in csv.reader(fin):
-            if (row[0]=="timestamp"):
-                nonexist_sc = []
-                for n in subcarriers:
-                    col_head = " subcarrier"+str(n).rjust(2, "0")+f"_{part}"
-                    if (col_head in row):
-                        sc_map[n] = []
-                        sc_idx_map[n] = row.index(col_head)
-                    else:
-                        nonexist_sc.append(n)
-                for n in nonexist_sc:
-                    subcarriers.pop(subcarriers.index(n))
-            else:
-                if (counter>=start and counter<end):
-                    for n in subcarriers:
-                        sc_map[n].append(float(row[sc_idx_map[n]]))
-                    counter += 1
-                    continue
-                elif (counter<start):
-                    counter += 1
-                    continue
-                elif (counter>=end):
-                    break
-        
+    #search & collect data
+    for n in subcarriers:
+        if ("subcarrier"+str(n).rjust(2, "0")+f"_{part}" in fin.keys()):
+            signals["subcarrier"+str(n).rjust(2, "0")+f"_{part}"] = fin["subcarrier"+str(n).rjust(2, "0")+f"_{part}"].iloc[start_idx:end_idx]
+
     #plot
     plt.figure()
     plt.xlabel("packets")
     plt.ylabel(part)
-    plt.ylim([-127, 127])
-    for n in sc_map:
-        plt.plot(range(start, counter), sc_map[n], label="subcarrier"+str(n).rjust(2, "0"), linewidth=0.3)
+    plt.ylim([-100, 100])
+    for k in signals.keys():
+        signals[k].plot(linewidth=0.2)
     plt.legend()
     plt.show()
-
 
 def get_butterworth_LPF(cutoff, fs, order=5):
     nyq = 0.5 * fs
@@ -154,4 +132,4 @@ if __name__=="__main__":
     #clip("./CSI Collector/record/20220718171953_8CCE4E9A045C_mp.csv", 230, 260, "walk_aside")
     fs = 1 / settings["CSI_sampling_period"]
     b, a = get_butterworth_LPF(fs*0.3, fs)
-    clip(fpath, 200, 400, "apple")
+    plot_CSI_signal(fpath, batch_num=4)
